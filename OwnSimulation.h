@@ -6,10 +6,29 @@
 #define PAGING_OWNSIMULATION_H
 
 
+#include <random>
+#include <list>
 #include "PagingSimulation.h"
 
 class OwnSimulation : public PagingSimulation {
-    unsigned int mSinceLastHit;
+    unsigned int mSinceLastHit = 0;
+    unsigned int mRandomReplacementsRemaining = 0;
+    std::mt19937 mt;
+    std::uniform_int_distribution<unsigned int> dist;
+    std::list<PageTableEntry*> cacheList;
+    std::unordered_map<unsigned int, std::list<PageTableEntry*>::iterator> cacheMap;
+public:
+    OwnSimulation();
+
+    OwnSimulation(unsigned int nFrames, bool verbose);
+
+    void UpdateEntry(PageTableEntry* entry);
+
+    PageTableEntry* RemoveFrameEntry();
+
+    void AddFrameEntry(PageTableEntry* entry);
+
+    void Process();
 
 };
 
