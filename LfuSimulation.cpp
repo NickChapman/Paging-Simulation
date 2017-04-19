@@ -24,7 +24,7 @@ void LfuSimulation::UpdateEntry(PageTableEntry* entry) {
 
 PageTableEntry* LfuSimulation::RemoveFrameEntry() {
     std::pop_heap(this->mFrequencyQueue.begin(), this->mFrequencyQueue.end(), LfuSimulation::FrequencyComparator);
-    Pair *back = this->mFrequencyQueue.back();
+    Pair* back = this->mFrequencyQueue.back();
     PageTableEntry* removed = back->second;
     this->mFrequencyQueue.pop_back();
     this->mIteratorMap.erase(removed->mVpn);

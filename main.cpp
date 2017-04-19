@@ -40,10 +40,10 @@ int main(int argc, char* argv[]) {
     else if (algo == "LRU") {
         simulation = new LruSimulation(nFrames, verbose);
     }
-    else if(algo == "LFU") {
+    else if (algo == "LFU") {
         simulation = new LfuSimulation(nFrames, verbose);
     }
-    else if(algo == "RAND") {
+    else if (algo == "RAND") {
         simulation = new RandomSimulation(nFrames, verbose);
     }
     else if (algo == "OWN") {
