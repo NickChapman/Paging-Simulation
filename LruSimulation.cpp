@@ -24,12 +24,14 @@ PageTableEntry* LruSimulation::RemoveFrameEntry() {
     PageTableEntry* entry = this->cacheList.back();
     this->cacheList.pop_back();
     this->cacheMap.erase(entry->mVpn);
+    this->mFrames.erase(entry->mVpn);
     return entry;
 }
 
 void LruSimulation::AddFrameEntry(PageTableEntry* entry) {
     this->cacheList.push_front(entry);
     this->cacheMap.emplace(entry->mVpn, this->cacheList.begin());
+    this->mFrames.emplace(entry->mVpn, entry);
 }
 
 void LruSimulation::Process() {
@@ -48,6 +50,7 @@ void LruSimulation::Process() {
         // Check if the page is in the frames
         if (this->mFrames.count(vpn) == 1) {
             entry = this->mFrames.at(vpn);
+            this->UpdateEntry(entry->mVpn);
             // It's in the frames and it's a hit!
             // If it's a write then this dirties the page
             if (action == 'W') {
@@ -66,7 +69,6 @@ void LruSimulation::Process() {
             if (this->mDisk.count(vpn) == 1) {
                 entry = this->mDisk.at(vpn);
                 this->mDisk.erase(vpn);
-
             }
             else {
                 // This is the first time we have seen this page and we need to make it
