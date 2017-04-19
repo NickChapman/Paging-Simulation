@@ -1,50 +1,47 @@
 //
-// Created by Nick Chapman on 4/18/17.
+// Created by Nick Chapman on 4/19/17.
 //
 
-#include "GlobalClockSimulation.h"
+#include "LfuSimulation.h"
 
-GlobalClockSimulation::GlobalClockSimulation() : PagingSimulation() {}
-
-GlobalClockSimulation::GlobalClockSimulation(unsigned int nFrames, bool verbose) : PagingSimulation(nFrames, verbose) {}
-
-PageTableEntry* GlobalClockSimulation::RemoveFrameEntry() {
-    // Look for pages that aren't dirtied or recently used
-    for (auto kvPair : this->mFrames) {
-        if (!kvPair.second->mDirty and !kvPair.second->mClock) {
-            this->mFrames.erase(kvPair.second->mVpn);
-            return kvPair.second;
-        }
-        else {
-            kvPair.second->mClock = false;
-        }
-    }
-    // Now look for pages that simply haven't been dirtied
-    // If there are none then return the last one
-    unsigned long count = 1;
-    unsigned long size = this->mFrames.size();
-    for (auto kvPair : this->mFrames) {
-        if (!kvPair.second->mDirty) {
-            this->mFrames.erase(kvPair.second->mVpn);
-            return kvPair.second;
-        }
-        else if (count == size) {
-            this->mFrames.erase(kvPair.second->mVpn);
-            return kvPair.second;
-        }
-        else {
-            count += 1;
-        }
-    }
-    throw "Global Clock failed to find anything. Something horrible has happened."; // THIS SHOULD NEVER HAPPEN
+LfuSimulation::LfuSimulation() : PagingSimulation() {
+    this->mFrequencyQueue = std::vector<Pair*>();
+    std::make_heap(this->mFrequencyQueue.begin(), this->mFrequencyQueue.end(), LfuSimulation::FrequencyComparator);
+    this->mIteratorMap = std::unordered_map<unsigned int, Pair*>();
 }
 
-void GlobalClockSimulation::AddFrameEntry(PageTableEntry* entry) {
+LfuSimulation::LfuSimulation(unsigned int nFrames, bool verbose) : PagingSimulation(nFrames, verbose) {
+    this->mFrequencyQueue = std::vector<Pair*>();
+    std::make_heap(this->mFrequencyQueue.begin(), this->mFrequencyQueue.end(), LfuSimulation::FrequencyComparator);
+    this->mIteratorMap = std::unordered_map<unsigned int, Pair*>();
+}
+
+void LfuSimulation::UpdateEntry(PageTableEntry* entry) {
+    Pair* pair = this->mIteratorMap.at(entry->mVpn);
+    pair->first += 1;
+    std::make_heap(this->mFrequencyQueue.begin(), this->mFrequencyQueue.end(), LfuSimulation::FrequencyComparator);
+}
+
+PageTableEntry* LfuSimulation::RemoveFrameEntry() {
+    std::pop_heap(this->mFrequencyQueue.begin(), this->mFrequencyQueue.end(), LfuSimulation::FrequencyComparator);
+    Pair *back = this->mFrequencyQueue.back();
+    PageTableEntry* removed = back->second;
+    this->mFrequencyQueue.pop_back();
+    this->mIteratorMap.erase(removed->mVpn);
+    this->mFrames.erase(removed->mVpn);
+    delete back;
+    return removed;
+}
+
+void LfuSimulation::AddFrameEntry(PageTableEntry* entry) {
     this->mFrames.emplace(entry->mVpn, entry);
-    entry->mClock = true;
+    this->mFrequencyQueue.push_back(new Pair(1, entry));
+    Pair* pair = this->mFrequencyQueue.back();
+    this->mIteratorMap.emplace(entry->mVpn, pair);
+    std::push_heap(this->mFrequencyQueue.begin(), this->mFrequencyQueue.end(), LfuSimulation::FrequencyComparator);
 }
 
-void GlobalClockSimulation::Process() {
+void LfuSimulation::Process() {
     unsigned int accesses = 0;
     unsigned int misses = 0;
     unsigned int writes = 0;
@@ -60,7 +57,7 @@ void GlobalClockSimulation::Process() {
         // Check if the page is in the frames
         if (this->mFrames.count(vpn) == 1) {
             entry = this->mFrames.at(vpn);
-            entry->mClock = true;
+            this->UpdateEntry(entry);
             // It's in the frames and it's a hit!
             // If it's a write then this dirties the page
             if (action == 'W') {
@@ -75,7 +72,6 @@ void GlobalClockSimulation::Process() {
             // It's a miss
             misses += 1;
             entry = new PageTableEntry(vpn);
-            entry->mClock = true;
             // Check if our frames are full yet
             PageTableEntry* removed = nullptr;
             if (this->mFrames.size() >= this->mNFrames) {
@@ -116,3 +112,7 @@ void GlobalClockSimulation::Process() {
     std::cout << "Number of writes: " << writes << std::endl;
     std::cout << "Number of drops: " << drops << std::endl;
 }
+
+
+
+

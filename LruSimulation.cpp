@@ -64,23 +64,13 @@ void LruSimulation::Process() {
         else {
             // It's a miss
             misses += 1;
-            // It wasn't in the frames, so check to see if we have a record
-            // for it in our disk yet
-            if (this->mDisk.count(vpn) == 1) {
-                entry = this->mDisk.at(vpn);
-                this->mDisk.erase(vpn);
-            }
-            else {
-                // This is the first time we have seen this page and we need to make it
-                entry = new PageTableEntry(vpn);
-            }
+            entry = new PageTableEntry(vpn);
             // Check if our frames are full yet
             PageTableEntry* removed = nullptr;
             if (this->mFrames.size() >= this->mNFrames) {
                 // It's full so remove one
                 removed = this->RemoveFrameEntry();
                 // Put the removed one back into the general page table
-                this->mDisk.emplace(removed->mVpn, removed);
                 // Put the new one into the frames
                 this->AddFrameEntry(entry);
                 // Check if we had to write

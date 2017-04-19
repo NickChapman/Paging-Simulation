@@ -17,7 +17,6 @@ protected:
     bool verbose;
     unsigned int mNFrames;
     std::unordered_map<unsigned int, PageTableEntry*> mFrames;
-    std::unordered_map<unsigned int, PageTableEntry*> mDisk;
 
 public:
     PagingSimulation();

@@ -9,7 +9,6 @@
 #include "PagingSimulation.h"
 
 class RandomSimulation : public PagingSimulation {
-    std::random_device rd;
     std::mt19937 mt;
     std::uniform_int_distribution<unsigned int> dist;
 public:
