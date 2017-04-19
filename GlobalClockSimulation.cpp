@@ -2,23 +2,49 @@
 // Created by Nick Chapman on 4/18/17.
 //
 
-#include "PagingSimulation.h"
+#include "GlobalClockSimulation.h"
 
-PagingSimulation::PagingSimulation() {
-    this->verbose = false;
-    this->mNFrames = 50;
-    this->mFrames = std::unordered_map<unsigned int, PageTableEntry*>();
-    this->mDisk = std::unordered_map<unsigned int, PageTableEntry*>();
+GlobalClockSimulation::GlobalClockSimulation() : PagingSimulation() {}
+
+GlobalClockSimulation::GlobalClockSimulation(unsigned int nFrames, bool verbose) : PagingSimulation(nFrames, verbose) {}
+
+PageTableEntry* GlobalClockSimulation::RemoveFrameEntry() {
+    // Look for pages that aren't dirtied or recently used
+    for (auto kvPair : this->mFrames) {
+        if (!kvPair.second->mDirty and !kvPair.second->mClock) {
+            this->mFrames.erase(kvPair.second->mVpn);
+            return kvPair.second;
+        }
+        else {
+            kvPair.second->mClock = false;
+        }
+    }
+    // Now look for pages that simply haven't been dirtied
+    // If there are none then return the last one
+    unsigned long count = 1;
+    unsigned long size = this->mFrames.size();
+    for (auto kvPair : this->mFrames) {
+        if (!kvPair.second->mDirty) {
+            this->mFrames.erase(kvPair.second->mVpn);
+            return kvPair.second;
+        }
+        else if (count == size) {
+            this->mFrames.erase(kvPair.second->mVpn);
+            return kvPair.second;
+        }
+        else {
+            count += 1;
+        }
+    }
+    throw "Global Clock failed to find anything. Something horrible has happened."; // THIS SHOULD NEVER HAPPEN
 }
 
-PagingSimulation::PagingSimulation(unsigned int nFrames, bool verbose) {
-    this->verbose = verbose;
-    this->mNFrames = nFrames;
-    this->mFrames = std::unordered_map<unsigned int, PageTableEntry*>();
-    this->mDisk = std::unordered_map<unsigned int, PageTableEntry*>();
+void GlobalClockSimulation::AddFrameEntry(PageTableEntry* entry) {
+    this->mFrames.emplace(entry->mVpn, entry);
+    entry->mClock = true;
 }
 
-void PagingSimulation::Process() {
+void GlobalClockSimulation::Process() {
     unsigned int accesses = 0;
     unsigned int misses = 0;
     unsigned int writes = 0;
@@ -34,6 +60,7 @@ void PagingSimulation::Process() {
         // Check if the page is in the frames
         if (this->mFrames.count(vpn) == 1) {
             entry = this->mFrames.at(vpn);
+            entry->mClock = true;
             // It's in the frames and it's a hit!
             // If it's a write then this dirties the page
             if (action == 'W') {
@@ -57,6 +84,7 @@ void PagingSimulation::Process() {
             else {
                 // This is the first time we have seen this page and we need to make it
                 entry = new PageTableEntry(vpn);
+                entry->mClock = true;
             }
             // Check if our frames are full yet
             PageTableEntry* removed = nullptr;

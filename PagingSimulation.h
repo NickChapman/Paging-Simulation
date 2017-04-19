@@ -24,7 +24,7 @@ public:
 
     PagingSimulation(unsigned int nFrames, bool verbose = false);
 
-    void Process();
+    virtual void Process();
 
     virtual PageTableEntry* RemoveFrameEntry() = 0;
 

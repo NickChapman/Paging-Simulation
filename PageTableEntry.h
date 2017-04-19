@@ -10,6 +10,7 @@ class PageTableEntry {
 public:
     unsigned int mVpn;
     bool mDirty;
+    bool mClock;
 
     PageTableEntry(unsigned int vpn) {
         this->mVpn = vpn;

@@ -1,24 +1,38 @@
 //
-// Created by Nick Chapman on 4/18/17.
+// Created by Nick Chapman on 4/19/17.
 //
 
-#include "PagingSimulation.h"
+#include "LruSimulation.h"
 
-PagingSimulation::PagingSimulation() {
-    this->verbose = false;
-    this->mNFrames = 50;
-    this->mFrames = std::unordered_map<unsigned int, PageTableEntry*>();
-    this->mDisk = std::unordered_map<unsigned int, PageTableEntry*>();
+LruSimulation::LruSimulation() : PagingSimulation() {
+    this->cacheList = std::list<PageTableEntry*>();
+    this->cacheMap = std::unordered_map<unsigned int, std::list<PageTableEntry*>::iterator>();
 }
 
-PagingSimulation::PagingSimulation(unsigned int nFrames, bool verbose) {
-    this->verbose = verbose;
-    this->mNFrames = nFrames;
-    this->mFrames = std::unordered_map<unsigned int, PageTableEntry*>();
-    this->mDisk = std::unordered_map<unsigned int, PageTableEntry*>();
+LruSimulation::LruSimulation(unsigned int nFrames, bool verbose) : PagingSimulation(nFrames, verbose) {
+    this->cacheList = std::list<PageTableEntry*>();
+    this->cacheMap = std::unordered_map<unsigned int, std::list<PageTableEntry*>::iterator>();
 }
 
-void PagingSimulation::Process() {
+void LruSimulation::UpdateEntry(unsigned int vpn) {
+    auto it = this->cacheMap.at(vpn);
+    this->cacheList.splice(this->cacheList.begin(), this->cacheList, it);
+}
+
+PageTableEntry* LruSimulation::RemoveFrameEntry() {
+    // Take the entry off of the back
+    PageTableEntry* entry = this->cacheList.back();
+    this->cacheList.pop_back();
+    this->cacheMap.erase(entry->mVpn);
+    return entry;
+}
+
+void LruSimulation::AddFrameEntry(PageTableEntry* entry) {
+    this->cacheList.push_front(entry);
+    this->cacheMap.emplace(entry->mVpn, this->cacheList.begin());
+}
+
+void LruSimulation::Process() {
     unsigned int accesses = 0;
     unsigned int misses = 0;
     unsigned int writes = 0;
@@ -99,3 +113,4 @@ void PagingSimulation::Process() {
     std::cout << "Number of writes: " << writes << std::endl;
     std::cout << "Number of drops: " << drops << std::endl;
 }
+
