@@ -16,8 +16,8 @@ protected:
     static const unsigned int cPageSize = 4096;
     bool verbose;
     unsigned int mNFrames;
-    std::unordered_map<unsigned int, PageTableEntry*> mFrames = std::unordered_map<unsigned int, PageTableEntry*>();
-    PageTableEntry** mDisk = new PageTableEntry*[cMaxPageNumber] { 0 };
+    std::unordered_map<unsigned int, PageTableEntry*> mFrames;
+    std::unordered_map<unsigned int, PageTableEntry*> mDisk;
 
 public:
     PagingSimulation();

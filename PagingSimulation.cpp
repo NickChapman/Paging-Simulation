@@ -7,11 +7,15 @@
 PagingSimulation::PagingSimulation() {
     this->verbose = false;
     this->mNFrames = 50;
+    this->mFrames = std::unordered_map<unsigned int, PageTableEntry*>();
+    this->mDisk = std::unordered_map<unsigned int, PageTableEntry*>();
 }
 
 PagingSimulation::PagingSimulation(unsigned int nFrames, bool verbose) {
     this->verbose = verbose;
     this->mNFrames = nFrames;
+    this->mFrames = std::unordered_map<unsigned int, PageTableEntry*>();
+    this->mDisk = std::unordered_map<unsigned int, PageTableEntry*>();
 }
 
 void PagingSimulation::Process() {
@@ -44,9 +48,9 @@ void PagingSimulation::Process() {
             // It wasn't in the frames, so check to see if we have a record
             // for it in our disk yet
             PageTableEntry *entry;
-            if (this->mDisk[vpn] != nullptr) {
-                entry = this->mDisk[vpn];
-                this->mDisk[vpn] = 0;
+            if (this->mDisk.count(vpn) == 1) {
+                entry = this->mDisk.at(vpn);
+                this->mDisk.erase(vpn);
 
             }
             else {
@@ -59,7 +63,7 @@ void PagingSimulation::Process() {
                 // It's full so remove one
                 removed = this->RemoveFrameEntry();
                 // Put the removed one back into the general page table
-                this->mDisk[removed->mVpn] = removed;
+                this->mDisk.emplace(removed->mVpn, removed);
                 // Put the new one into the frames
                 this->AddFrameEntry(entry);
                 // Check if we had to write
