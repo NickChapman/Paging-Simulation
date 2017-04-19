@@ -11,7 +11,7 @@
 
 using Pair = std::pair<unsigned int, PageTableEntry*>;
 
-class LfuSimulation : PagingSimulation {
+class LfuSimulation : public PagingSimulation {
     static struct _FrequencyComparator {
         bool operator()(std::pair<unsigned int, PageTableEntry*>* const& lhs,
                         std::pair<unsigned int, PageTableEntry*>* const& rhs) {

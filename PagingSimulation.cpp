@@ -57,13 +57,13 @@ void PagingSimulation::Process() {
                 if (removed->mDirty) {
                     removed->mDirty = false;
                     if (this->verbose) {
-                        std::cout << "Page 0x" << std::hex << vpn << " swaps page 0x" << removed->mVpn << std::endl;
+                        std::cout << "Page 0x" << std::hex << removed->mVpn << " swaps page 0x" << vpn << std::endl;
                     }
                     writes += 1;
                 }
                 else {
                     if (this->verbose) {
-                        std::cout << "Page 0x" << std::hex << vpn << " overwrites page 0x" << removed->mVpn
+                        std::cout << "Page 0x" << std::hex << removed->mVpn << " overwrites page 0x" << vpn
                                   << std::endl;
                     }
                     drops += 1;
